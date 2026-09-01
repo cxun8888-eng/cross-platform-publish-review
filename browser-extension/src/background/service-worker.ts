@@ -2,6 +2,22 @@
   type Platform = "douyin" | "xiaohongshu" | "weibo";
   type ReturnMode = "workspace" | "wizard";
   type Sender = { tab?: { id?: number; url?: string } };
+  type TrustedClickErrorCode =
+    | "DEBUGGER_PERMISSION_MISSING"
+    | "DEBUGGER_ATTACH_FAILED"
+    | "TRUSTED_CLICK_TARGET_NOT_FOUND"
+    | "TRUSTED_CLICK_TARGET_AMBIGUOUS"
+    | "TRUSTED_CLICK_INVALID_TARGET"
+    | "TRUSTED_CLICK_FAILED";
+  class TrustedClickError extends Error {
+    readonly code: TrustedClickErrorCode;
+
+    constructor(code: TrustedClickErrorCode, message: string) {
+      super(message);
+      this.name = "TrustedClickError";
+      this.code = code;
+    }
+  }
   type Message = {
     type?: string;
     platform?: Platform;
@@ -162,42 +178,54 @@
     for (let index = 0; index < attrs.length; index += 2) if (attrs[index] === "class") return attrs[index + 1] || "";
     return "";
   }
-  function findFinalButton(node: CdpNode): CdpNode | null {
-    const name = (node.localName || node.nodeName || "").toLowerCase();
-    if (name === "button" && nodeText(node) === "发布" && /(?:^|\s)bg-red(?:\s|$)/.test(nodeClass(node))) return node;
-    for (const child of [...(node.shadowRoots || []), ...(node.children || [])]) {
-      const found = findFinalButton(child);
-      if (found) return found;
-    }
-    return null;
+  function findFinalButtons(root: CdpNode): CdpNode[] {
+    const matches: CdpNode[] = [];
+    const visit = (node: CdpNode) => {
+      const name = (node.localName || node.nodeName || "").toLowerCase();
+      if (name === "button" && nodeText(node) === "发布" && /(?:^|\s)bg-red(?:\s|$)/.test(nodeClass(node))) matches.push(node);
+      for (const child of [...(node.shadowRoots || []), ...(node.children || [])]) visit(child);
+    };
+    visit(root);
+    return matches;
   }
 
   async function dispatchTrustedClick(sender: Sender, message: Message) {
     const tabId = sender.tab?.id;
     if (!tabId || !platformFromSender(sender)) throw new Error("只允许在受支持的官方发布页执行受信任点击");
     if (!(await chrome.permissions.contains({ permissions: ["debugger"] }))) {
-      const granted = await chrome.permissions.request({ permissions: ["debugger"] });
-      if (!granted) throw new Error("未获得调试权限，请使用平台页面按钮手动继续");
+      throw new TrustedClickError("DEBUGGER_PERMISSION_MISSING", "扩展缺少安装时调试权限，请重新加载或重新启用 PublishLoop");
     }
     const target = { tabId };
     let attached = false;
     try {
-      await chrome.debugger.attach(target, "1.3");
+      try {
+        await chrome.debugger.attach(target, "1.3");
+      } catch {
+        throw new TrustedClickError("DEBUGGER_ATTACH_FAILED", "当前标签页的调试连接不可用，可能已被 DevTools 或其他调试器占用");
+      }
       attached = true;
       let point = { x: Number(message.x), y: Number(message.y) };
       if (message.target === "final-publish") {
         const document = await chrome.debugger.sendCommand(target, "DOM.getDocument", { depth: -1, pierce: true }) as { root?: CdpNode };
-        const button = document.root ? findFinalButton(document.root) : null;
-        if (!button?.backendNodeId) throw new Error("无法唯一定位最终发布按钮");
+        const buttons = document.root ? findFinalButtons(document.root) : [];
+        if (buttons.length === 0) throw new TrustedClickError("TRUSTED_CLICK_TARGET_NOT_FOUND", "没有找到最终发布按钮");
+        if (buttons.length > 1) throw new TrustedClickError("TRUSTED_CLICK_TARGET_AMBIGUOUS", "页面上存在多个最终发布按钮，为避免误发已停止操作");
+        const button = buttons[0];
+        if (!button?.backendNodeId) throw new TrustedClickError("TRUSTED_CLICK_INVALID_TARGET", "最终发布按钮缺少可用定位信息");
         const box = await chrome.debugger.sendCommand(target, "DOM.getBoxModel", { backendNodeId: button.backendNodeId }) as { model?: { content?: number[] } };
         const content = box.model?.content || [];
-        if (content.length < 8) throw new Error("无法读取最终发布按钮位置");
+        if (content.length < 8) throw new TrustedClickError("TRUSTED_CLICK_INVALID_TARGET", "无法读取最终发布按钮位置");
         point = { x: (content[0] + content[2] + content[4] + content[6]) / 4, y: (content[1] + content[3] + content[5] + content[7]) / 4 };
       }
-      if (!Number.isFinite(point.x) || !Number.isFinite(point.y) || point.x < 0 || point.y < 0 || point.x > 10000 || point.y > 10000) throw new Error("受信任点击坐标无效");
+      if (!Number.isFinite(point.x) || !Number.isFinite(point.y) || point.x < 0 || point.y < 0 || point.x > 10000 || point.y > 10000) {
+        throw new TrustedClickError("TRUSTED_CLICK_INVALID_TARGET", "受信任点击坐标无效");
+      }
       for (const [type, buttons] of [["mouseMoved", 0], ["mousePressed", 1], ["mouseReleased", 0]] as const) {
         await chrome.debugger.sendCommand(target, "Input.dispatchMouseEvent", { type, x: point.x, y: point.y, button: type === "mouseMoved" ? "none" : "left", buttons, clickCount: type === "mouseMoved" ? 0 : 1 });
       }
+    } catch (error) {
+      if (error instanceof TrustedClickError) throw error;
+      throw new TrustedClickError("TRUSTED_CLICK_FAILED", "浏览器级点击执行失败，请使用平台原生按钮手动继续");
     } finally {
       if (attached) await chrome.debugger.detach(target).catch(() => undefined);
     }
@@ -225,7 +253,11 @@
         } else throw new Error("未知或不受支持的消息");
         sendResponse({ ok: true, data: null });
       } catch (error) {
-        sendResponse({ ok: false, error: error instanceof Error ? error.message : "请求失败" });
+        sendResponse({
+          ok: false,
+          error: error instanceof Error ? error.message : "请求失败",
+          ...(error instanceof TrustedClickError ? { code: error.code } : {}),
+        });
       }
     })();
     return true;

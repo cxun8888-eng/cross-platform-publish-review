@@ -28,7 +28,7 @@ RedFox 只实现第二条链路的 Provider，不参与浏览器发布。
 │               │ chrome.runtime message         │
 │               ▼                                │
 │  Extension Service Worker                      │
-│    └─ host validation / optional CDP / return  │
+│    └─ host validation / short-lived CDP / return│
 └───────────────────────┬────────────────────────┘
                         │ REST
 ┌──────────────────── Server ─────────────────────┐

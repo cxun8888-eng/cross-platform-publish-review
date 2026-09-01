@@ -61,7 +61,7 @@ https://console.example.com
 | --- | --- | --- |
 | `storage` | 安装时授予 | 保存应用 Origin、回调路径和同标签短期回流状态 |
 | 官方平台 host permissions | 安装时授予 | 仅在声明的平台页面注入内容脚本 |
-| `debugger` | 可选、按需申请 | 普通 DOM 事件无法操作文件入口或 closed Shadow DOM 时发送一次可信鼠标事件 |
+| `debugger` | 安装时授予 | 普通 DOM 事件无法操作文件入口或 closed Shadow DOM 时发送一次可信鼠标事件 |
 
 扩展不申请：
 
@@ -71,11 +71,11 @@ https://console.example.com
 - 浏览历史
 - 剪贴板
 
-### 为什么会出现调试权限警告
+### 为什么安装时会出现调试权限警告
 
-部分平台用 closed Shadow DOM 或只接受浏览器级可信事件。用户点击助手按钮后，扩展才调用 `chrome.permissions.request`。允许后，后台短暂 attach 当前官方页面，完成一次点击后立即 detach。
+部分平台使用 closed Shadow DOM 或只接受浏览器级可信事件。Chrome 不允许把 `debugger` 声明为可选权限，所以 PublishLoop 必须在安装时声明它。扩展只在受支持的官方页面需要增强点击时短暂 attach 当前标签，完成或失败后都立即 detach。
 
-如果拒绝权限，扩展会提示使用平台原生按钮手动继续。拒绝不会影响文案 fragment 的读取。
+从 0.1.1 升级到 0.1.2 后，请在扩展管理页重新加载 PublishLoop。若浏览器因新增权限暂停扩展，请重新启用并确认权限警告，然后刷新已打开的平台页面。权限异常不会破坏草稿，仍可使用平台原生按钮手动继续。
 
 如果 DevTools 或其他调试器已经占用标签页，`chrome.debugger.attach` 可能失败。关闭 DevTools 后重试，或者直接手动点击平台按钮。
 
@@ -115,7 +115,7 @@ https://console.example.com
 2. 首次进入时可能刷新一次，让平台 SPA 初始化编辑器；
 3. 用户手动选择图片；
 4. 扩展填充标题、正文和话题；
-5. 用户确认后，扩展在需要时使用可选 `debugger` 权限操作 closed Shadow DOM 中的唯一发布按钮；
+5. 用户确认后，扩展在需要时使用安装时授予的 `debugger` 权限操作 closed Shadow DOM 中的唯一发布按钮；
 6. 发布后尽力读取公开作品链接和笔记数据；
 7. 当前标签返回宿主应用。
 
