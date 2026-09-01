@@ -1,6 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "多平台发布与作品复盘助手",
+  "name": "PublishLoop｜多平台发布与作品复盘助手",
+  "short_name": "PublishLoop",
   "description": "在抖音、小红书和微博官方发布页导入宿主应用草稿，并将发布结果回传宿主应用。",
   "version": "0.1.1",
   "minimum_chrome_version": "102",
@@ -16,7 +17,7 @@
     "service_worker": "dist/background/service-worker.js"
   },
   "action": {
-    "default_title": "打开多平台发布与作品复盘助手",
+    "default_title": "打开 PublishLoop",
     "default_popup": "dist/popup/popup.html"
   },
   "content_scripts": [

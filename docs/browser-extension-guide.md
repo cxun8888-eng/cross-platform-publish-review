@@ -2,7 +2,7 @@
 
 ## 扩展做什么
 
-`多平台发布与作品复盘助手` 是 Chrome/Edge Manifest V3 扩展。它只在以下官方域名运行内容脚本：
+`PublishLoop（发布回环）`是 Chrome/Edge Manifest V3 多平台发布与作品复盘助手。它只在以下官方域名运行内容脚本：
 
 - `creator.douyin.com`
 - `creator.xiaohongshu.com`

@@ -25,13 +25,15 @@ test("扩展使用独立的中性产品名称", async () => {
   const popup = await readFile(resolve(root, "src/popup/popup.html"), "utf8");
   const creator = await readFile(resolve(root, "src/content/creator-content.ts"), "utf8");
   const weibo = await readFile(resolve(root, "src/content/weibo-content.ts"), "utf8");
-  assert.equal(manifest.name, "多平台发布与作品复盘助手");
+  assert.equal(manifest.name, "PublishLoop｜多平台发布与作品复盘助手");
+  assert.equal(manifest.short_name, "PublishLoop");
   assert.equal(manifest.version, "0.1.1");
-  assert.equal(manifest.action.default_title, "打开多平台发布与作品复盘助手");
+  assert.equal(manifest.action.default_title, "打开 PublishLoop");
   assert.match(manifest.description, /宿主应用/);
-  assert.match(popup, /多平台发布与作品复盘助手/);
-  assert.match(creator, /多平台发布与作品复盘助手/);
-  assert.match(weibo, /多平台发布与作品复盘助手/);
+  assert.match(popup, /PublishLoop/);
+  assert.match(popup, /发布回环/);
+  assert.match(creator, /PublishLoop/);
+  assert.match(weibo, /PublishLoop/);
 });
 
 test("最终动作保留用户确认与官方来源校验", async () => {

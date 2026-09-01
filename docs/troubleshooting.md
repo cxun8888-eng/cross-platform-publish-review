@@ -30,7 +30,7 @@ GitHub 代码更新不会替换浏览器中已加载的旧目录。如果扩展�
 1. 在扩展管理页移除旧扩展；
 2. 确认本仓库已执行 `npm run build`；
 3. 重新选择 `cross-platform-publish-review/browser-extension/`；
-4. 确认新卡片名称为“多平台发布与作品复盘助手”。
+4. 确认新卡片名称为“PublishLoop｜多平台发布与作品复盘助手”。
 
 ## 官方页面没有出现助手
 
