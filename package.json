@@ -1,7 +1,7 @@
 {
   "name": "cross-platform-publish-review",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "workspaces": ["packages/protocol", "browser-extension"],
   "scripts": {
     "build": "npm run build --workspace @publish-review/protocol && npm run build --workspace @publish-review/browser-extension",
