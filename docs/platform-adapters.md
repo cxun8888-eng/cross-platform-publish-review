@@ -14,7 +14,7 @@
 
 - `creator-content.ts`：抖音与小红书页面识别、状态机、助手 UI、成功页/看板解析；
 - `weibo-content.ts`：微博编辑器、素材入口、正文校验和发送状态机；
-- `service-worker.ts`：官方 Host 校验、可选可信点击、回盘状态与回调；
+- `service-worker.ts`：官方 Host 校验、受控可信点击、回盘状态与回调；
 - `manifest.json`：精确 host permissions 和注入时机。
 
 后续建议拆出统一接口：
@@ -65,7 +65,7 @@ draft-detected
 - 保存用户文件；
 - 在没有用户手势时反复弹窗。
 
-普通 DOM click 无效时，可以在官方 Host 校验和用户手势之后请求可选 `debugger` 权限；失败必须降级到平台原生按钮。
+普通 DOM click 无效时，可以在官方 Host 和消息类型校验后使用安装时声明的 `debugger` 权限发送受控点击；权限、连接或定位失败必须降级到平台原生按钮。
 
 ## 回执解析
 
@@ -126,6 +126,6 @@ draft-detected
 - 指标零值、负值、单位与上限；
 - 标题不匹配时不回退第一行；
 - manifest 不含 `<all_urls>`、Cookie 或 RedFox；
-- `debugger` 保持可选并在操作后 detach。
+- manifest 必须声明安装时 `debugger` 权限，代码不得在延迟流程中动态申请，并须在每次操作后 detach。
 
 真实账号 smoke test 仍然必需，自动化 fixture 不能证明平台当前页面没有改版。

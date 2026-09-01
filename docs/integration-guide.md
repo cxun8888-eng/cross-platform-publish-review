@@ -50,7 +50,7 @@ const handoffUrl = buildDraftHandoffUrl({
 window.location.assign(handoffUrl);
 ```
 
-重要限制：公开扩展 v0.1.0 只接受 `source: "publish-review-demo"`。如果要改成产品自己的 Source，必须同步修改抖音/小红书与微博内容脚本的校验，并更新安全契约测试。
+重要限制：当前公开扩展只接受 `source: "publish-review-demo"`。如果要改成产品自己的 Source，必须同步修改抖音/小红书与微博内容脚本的校验，并更新安全契约测试。
 
 在 Next.js 等支持 SSR 的框架中，构造 URL 的代码应在浏览器侧运行，因为实现使用 `btoa`、`atob`、`TextEncoder` 和 `TextDecoder`。
 

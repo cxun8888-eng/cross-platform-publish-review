@@ -17,7 +17,6 @@ declare const chrome: {
   };
   permissions: {
     contains: (permissions: { permissions: string[] }) => Promise<boolean>;
-    request: (permissions: { permissions: string[] }) => Promise<boolean>;
   };
   storage: {
     local: { get: (keys?: string | string[] | Record<string, unknown>) => Promise<Record<string, any>>; set: (items: Record<string, unknown>) => Promise<void> };

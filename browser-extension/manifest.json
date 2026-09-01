@@ -3,10 +3,9 @@
   "name": "PublishLoop｜多平台发布与作品复盘助手",
   "short_name": "PublishLoop",
   "description": "在抖音、小红书和微博官方发布页导入宿主应用草稿，并将发布结果回传宿主应用。",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "minimum_chrome_version": "102",
-  "permissions": ["storage"],
-  "optional_permissions": ["debugger"],
+  "permissions": ["storage", "debugger"],
   "host_permissions": [
     "https://creator.douyin.com/*",
     "https://creator.xiaohongshu.com/*",

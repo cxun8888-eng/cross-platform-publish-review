@@ -78,7 +78,7 @@ Host Web                  Official page / Content script       Service Worker
 
 协议包输出限制：标题 200 字、正文 10,000 字、去重标签最多 30 个。当前内容脚本再次截断标签到 20 个、正文到 20,000 字。调用方应遵守协议包更严格的限制。
 
-当前扩展硬校验 `source === "publish-review-demo"`。这是 v0.1.0 的可信来源标识，不是动态租户字段。
+当前公开扩展硬校验 `source === "publish-review-demo"`。这是固定的可信来源标识，不是动态租户字段。
 
 ### 回执契约
 
@@ -118,16 +118,16 @@ Host Web                  Official page / Content script       Service Worker
 5. 导入后的正文没有发生无法解释的变化；
 6. 失败时停止并引导手动操作。
 
-### `debugger` 可选权限
+### `debugger` 安装权限与短时 CDP 会话
 
-普通 `element.click()` 可能被平台识别为非可信事件，closed Shadow DOM 也无法从普通内容脚本访问。后台在用户手势之后按需申请 `debugger`，使用 CDP：
+普通 `element.click()` 可能被平台识别为非可信事件，closed Shadow DOM 也无法从普通内容脚本访问。Chrome 不允许把 `debugger` 声明为可选权限，因此扩展在安装时声明该权限。后台收到内容脚本消息后先校验官方 Host，再使用 CDP：
 
 1. attach 当前官方标签；
 2. 读取 DOM/box model 或使用已验证坐标；
 3. 发送 `mouseMoved`、`mousePressed`、`mouseReleased`；
 4. 在 `finally` 中 detach。
 
-消息发送者的标签 URL 会再次做官方 Host 校验。权限拒绝或 attach 失败时降级为平台原生按钮。
+消息发送者的标签 URL 会再次做官方 Host 校验。安装权限异常、attach 失败或目标定位失败会返回不同错误码，并降级为平台原生按钮。
 
 ### 作品关联防误配
 
@@ -216,7 +216,7 @@ class WorkDetailProvider(Protocol):
 
 ## 8. 当前边界
 
-- 参考版本为 `0.1.0`，没有浏览器商店包或 GitHub Release；
+- 参考版本为 `0.1.2`，没有浏览器商店包或 GitHub Release；
 - 只支持源码构建和开发者模式加载；
 - 平台 DOM 变化可能导致选择器失效；
 - 微博只有 `triggered` 回执，没有可靠复盘；

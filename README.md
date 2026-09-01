@@ -4,7 +4,7 @@
 
 PublishLoop 不使用 iframe 嵌入第三方发布页，而是通过浏览器扩展把宿主应用的公开文案交接到抖音、小红书、微博官方页面；用户完成素材选择、账号检查与平台校验后，扩展将最小化回执带回宿主应用。抖音、小红书还可通过服务端 Provider 按作品链接创建复盘快照。
 
-> 当前版本 `0.1.1`，定位是源码级参考实现，不是浏览器商店发行版或托管服务。项目不保证平台最终发布成功，也不绕过验证码、风控或二次确认。
+> 当前版本 `0.1.2`，定位是源码级参考实现，不是浏览器商店发行版或托管服务。项目不保证平台最终发布成功，也不绕过验证码、风控或二次确认。
 
 ## 先从哪里开始
 
@@ -76,6 +76,8 @@ npm run build
 4. 选择 `cross-platform-publish-review/browser-extension/`。
 
 加载的是 `browser-extension/` 根目录，不是 `browser-extension/dist/`，因为 manifest 位于根目录并引用生成的 dist 文件。
+
+浏览器会显示 `debugger` 权限警告。该权限本身能力较强；PublishLoop 当前实现只在受支持的官方页面中，为受控的增强点击短暂建立调试会话，详细边界见[浏览器扩展使用指南](docs/browser-extension-guide.md#为什么安装时会出现调试权限警告)。
 
 加载成功后，扩展卡片应显示“PublishLoop｜多平台发布与作品复盘助手”。如果仍显示“文数智旅”或“旅策”，说明浏览器加载的是原项目旧目录；请先移除旧扩展，再重新选择本仓库的 `browser-extension/`。
 
@@ -165,7 +167,7 @@ REDFOX_XIAOHONGSHU_WORK_DETAIL_URL=
 - 不读取平台 Cookie、密码或账号凭据；
 - 不读取或自动选择本地文件；
 - 最终动作必须来自明确用户确认；
-- `debugger` 是按需申请的可选权限，一次操作后立即 detach；
+- `debugger` 本身能力较强；PublishLoop 在安装时声明该权限，当前实现只在受支持的官方页面短暂 attach，并在成功或失败后立即 detach；
 - 没有 `<all_urls>`、`cookies` 或 `webRequest` 权限；
 - 回调目标来自用户预先保存的 HTTPS Origin + 固定路径，草稿不能覆盖；
 - 手动作品链接只做官方域名和 ID 解析，后端不请求用户粘贴的 URL；
@@ -200,7 +202,7 @@ pytest
 
 - 没有 Chrome/Edge 商店包或 GitHub Release，当前只支持源码构建；
 - `@publish-review/protocol` 尚未发布到 npm；
-- 公开扩展 v0.1.0 只接受 `source: "publish-review-demo"`；
+- 当前公开扩展只接受 `source: "publish-review-demo"`；
 - 平台 DOM、中文按钮与 Shadow DOM 可能随时变化；
 - `triggered` 和 `resolved` 都不等于平台官方成功；
 - 微博没有可靠作品回盘；

@@ -50,6 +50,8 @@ Chrome：
 
 扩展卡片应显示“PublishLoop｜多平台发布与作品复盘助手”。如果仍显示“文数智旅”或“旅策”，请移除旧扩展并确认重新加载的是本仓库的 `browser-extension/` 根目录。
 
+浏览器可能显示 `debugger` 权限警告。该权限本身能力较强；PublishLoop 当前实现只在受支持的官方页面中，为受控的增强点击短暂建立调试会话。
+
 Edge 将第一步替换为 `edge://extensions/`，其余相同。
 
 更详细的权限解释与更新方式见[浏览器扩展使用指南](browser-extension-guide.md)。

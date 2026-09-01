@@ -829,8 +829,17 @@
   };
 
   type XhsFlowStage = "idle" | "menu-opened" | "upload-opened" | "asset-picker-opened" | "awaiting-confirmation" | "published";
+  type TrustedClickErrorCode =
+    | "DEBUGGER_PERMISSION_MISSING"
+    | "DEBUGGER_ATTACH_FAILED"
+    | "TRUSTED_CLICK_TARGET_NOT_FOUND"
+    | "TRUSTED_CLICK_TARGET_AMBIGUOUS"
+    | "TRUSTED_CLICK_INVALID_TARGET"
+    | "TRUSTED_CLICK_FAILED";
+  type TrustedClickResponse = { ok?: boolean; code?: TrustedClickErrorCode; error?: string };
   let xhsFlowStage: XhsFlowStage = "idle";
   let xhsFilledDraft: Draft | null = null;
+  let xhsTrustedClickPending = false;
   type DouyinFlowStage = "idle" | "asset-picker-opened" | "awaiting-confirmation" | "published";
   let douyinFlowStage: DouyinFlowStage = "idle";
   let douyinFilledDraft: Draft | null = null;
@@ -876,10 +885,57 @@
 
   const xhsClickableTarget = (element: HTMLElement) => element.closest<HTMLElement>("button,[role='button'],[role='menuitem'],.btn-wrapper,.creator-tab,a,li") || element;
 
-  const requestTrustedXhsClick = (element: HTMLElement, target: "coordinate" | "final-publish" = "coordinate") => {
+  const xhsTrustedClickFailureCopy = (response: TrustedClickResponse | null, isFinalPublish: boolean) => {
+    const manualAction = isFinalPublish
+      ? "直接点击页面底部的“发布”按钮，助手仍会继续等待作品回盘。"
+      : "手动点击页面上的“上传图片”；选图后在助手中点击“我已选好图片，继续”，助手将继续填充标题、正文和话题。";
+    if (response?.code === "DEBUGGER_PERMISSION_MISSING") {
+      return `当前扩展缺少增强点击权限。请在扩展管理页重新加载或重新启用 PublishLoop 0.1.2，并刷新小红书页面；也可以${manualAction}`;
+    }
+    if (response?.code === "DEBUGGER_ATTACH_FAILED") {
+      return `当前标签页的调试连接可能被 DevTools 或其他调试器占用。关闭占用后重试；也可以${manualAction}`;
+    }
+    if (["TRUSTED_CLICK_TARGET_NOT_FOUND", "TRUSTED_CLICK_TARGET_AMBIGUOUS", "TRUSTED_CLICK_INVALID_TARGET"].includes(response?.code || "")) {
+      return `小红书页面结构可能已经变化，助手没有找到唯一且可用的操作目标。请${manualAction}`;
+    }
+    return `浏览器级点击没有执行成功。请${manualAction}`;
+  };
+
+  const showXhsTrustedClickFailure = (response: TrustedClickResponse | null) => {
+    const isFinalPublish = String(xhsFlowStage) === "awaiting-confirmation";
+    if (!isFinalPublish && String(xhsFlowStage) !== "published") {
+      xhsLastActionElement = null;
+      xhsFlowStage = "upload-opened";
+    }
+    const manualContinue = isFinalPublish
+      ? ""
+      : `<div class="publish-review-dock-actions"><button class="publish-review-dock-primary" data-manual-asset-ready>我已选好图片，继续</button></div>`;
+    const panel = showPanel(`<div class="publish-review-head"><span>${isFinalPublish ? "发布需要手动继续" : "上传需要手动继续"}</span><button class="publish-review-close">×</button></div><div class="publish-review-state">${xhsTrustedClickFailureCopy(response, isFinalPublish)}</div>${manualContinue}`);
+    panel.querySelector("[data-manual-asset-ready]")?.addEventListener("click", () => {
+      if (!findTitle() || !findBody()) {
+        panel.querySelector(".publish-review-state")!.textContent = "还没有检测到小红书图文编辑器。请先用平台原生按钮选择图片，等待编辑器出现后再继续。";
+        return;
+      }
+      xhsFlowStage = "asset-picker-opened";
+      button.textContent = "请选择搭配图片";
+      button.setAttribute("aria-label", "请选择搭配图片");
+      panel.querySelector(".publish-review-state")!.textContent = "已确认图片选择完成，正在填入标题、正文和话题。";
+      scheduleXhsAdvance();
+    });
+  };
+
+  const requestTrustedXhsClick = (
+    element: HTMLElement,
+    target: "coordinate" | "final-publish" = "coordinate",
+    onSuccess?: () => void,
+  ) => {
+    if (xhsTrustedClickPending) return false;
     const clickable = xhsClickableTarget(element);
     const rect = clickable.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return false;
+    if (rect.width <= 0 || rect.height <= 0) {
+      showXhsTrustedClickFailure({ ok: false, code: "TRUSTED_CLICK_INVALID_TARGET" });
+      return false;
+    }
     // CDP 坐标点击会命中页面最上层元素；发送点击前暂时隐藏右侧助手，
     // 避免全高侧栏覆盖小红书的上传或最终发布按钮。
     const assistantPanel = shadow.querySelector<HTMLElement>(".publish-review-panel");
@@ -888,38 +944,31 @@
     const restoreAssistantPanel = () => {
       if (assistantPanel?.isConnected) assistantPanel.style.display = previousDisplay;
     };
+    xhsTrustedClickPending = true;
     void chrome.runtime.sendMessage({
       type: "XHS_TRUSTED_CLICK",
       target,
       x: rect.left + rect.width / 2,
       y: rect.top + rect.height / 2,
-    }).then((response) => {
-      if (response?.ok) return;
-      console.warn("[PublishLoop] 小红书受信任点击失败", response?.error || "未知错误");
-      if (String(xhsFlowStage) === "awaiting-confirmation") {
-        showPanel(`<div class="publish-review-head"><span>平台未响应</span><button class="publish-review-close">×</button></div><div class="publish-review-state">浏览器调试点击没有执行成功，请关闭小红书标签页的 DevTools、保持页面在前台，然后直接点击页面底部的“发布”按钮。</div>`);
+    }).then((response: TrustedClickResponse) => {
+      if (response?.ok) {
+        onSuccess?.();
         return;
       }
-      if (String(xhsFlowStage) !== "awaiting-confirmation" && String(xhsFlowStage) !== "published") {
-        xhsLastActionElement = null;
-        xhsFlowStage = "upload-opened";
-        showPanel(`<div class="publish-review-head"><span>需要重试上传</span><button class="publish-review-close">×</button></div><div class="publish-review-state">受信任点击没有执行成功。请关闭小红书标签页的 DevTools，保持该标签页在前台后，再点击页面上的“上传图片”；选图后插件仍会继续自动填充。</div>`);
-      }
+      console.warn("[PublishLoop] 小红书受信任点击失败", response?.error || "未知错误");
+      showXhsTrustedClickFailure(response || null);
     }).catch((error) => {
       console.warn("[PublishLoop] 小红书受信任点击请求失败", error);
-      if (String(xhsFlowStage) === "awaiting-confirmation") {
-        showPanel(`<div class="publish-review-head"><span>平台未响应</span><button class="publish-review-close">×</button></div><div class="publish-review-state">浏览器调试点击没有执行成功，请关闭小红书标签页的 DevTools、保持页面在前台，然后直接点击页面底部的“发布”按钮。</div>`);
-        return;
-      }
-      if (String(xhsFlowStage) !== "awaiting-confirmation" && String(xhsFlowStage) !== "published") {
-        xhsLastActionElement = null;
-        xhsFlowStage = "upload-opened";
-      }
-    }).finally(restoreAssistantPanel);
+      showXhsTrustedClickFailure(null);
+    }).finally(() => {
+      xhsTrustedClickPending = false;
+      restoreAssistantPanel();
+    });
     return true;
   };
 
-  const clickXhsAction = (element: HTMLElement, trusted = false) => {
+  const clickXhsAction = (element: HTMLElement, trusted = false, onTrustedSuccess?: () => void) => {
+    if (trusted && xhsTrustedClickPending) return false;
     const clickable = xhsClickableTarget(element);
     const now = Date.now();
     // 防止 MutationObserver 对同一个按钮重复触发，但允许“发布笔记”后
@@ -927,7 +976,7 @@
     if (clickable === xhsLastActionElement && now - xhsLastActionAt < 700) return false;
     xhsLastActionAt = now;
     xhsLastActionElement = clickable;
-    if (trusted) return requestTrustedXhsClick(clickable);
+    if (trusted) return requestTrustedXhsClick(clickable, "coordinate", onTrustedSuccess);
     // 某些版本不是监听 click，而是监听 pointer/mouse 事件；按真实点击顺序
     // 派发一组可冒泡事件，最后再调用 click 作为兼容回退。
     try {
@@ -1005,30 +1054,36 @@
         return;
       }
       beginReviewResolution(reviewTitle);
+      const handlePublishSubmitted = () => {
+        xhsFlowStage = "published";
+        pendingHandoff = null;
+        xhsFilledDraft = null;
+        clearStoredDraft();
+        try {
+          sessionStorage.removeItem(handoffRefreshKey);
+        } catch {
+          // 忽略标记清理失败，不影响小红书处理发布请求。
+        }
+        reviewOpenRequested.value = false;
+        panel.innerHTML = creatorAssistantFrame("正在回盘", `<ol class="publish-review-flow"><li class="is-done"><span class="publish-review-step-dot">✓</span><span>当前方案已导入</span></li><li class="is-done"><span class="publish-review-step-dot">✓</span><span>发布请求已提交</span></li><li class="is-active"><span class="publish-review-step-dot">03</span><span>正在读取作品信息并返回作品复盘</span></li></ol><div class="publish-review-state publish-review-dock-callout">请保持当前页面在前台，助手正在完成作品复盘接力。</div><div class="publish-review-dock-actions"><button class="publish-review-dock-secondary" data-open-saas-review>若未自动返回，手动进入作品复盘</button></div>`);
+        panel.querySelector(".publish-review-close")?.addEventListener("click", closePanel);
+        panel.querySelector("[data-open-saas-review]")?.addEventListener("click", () => openSaasReview(findPublishedWorkUrl() || undefined));
+        waitForPublishedWorkUrl(panel, workUrlBeforePublish);
+      };
       if (publishHosts.length === 1) {
-        requestTrustedXhsClick(publishHosts[0], "final-publish");
+        if (!requestTrustedXhsClick(publishHosts[0], "final-publish", handlePublishSubmitted)) {
+          confirmButton.disabled = false;
+        }
+        return;
       } else {
         publishButtons[0]?.click();
       }
-      xhsFlowStage = "published";
-      pendingHandoff = null;
-      xhsFilledDraft = null;
-      clearStoredDraft();
-      try {
-        sessionStorage.removeItem(handoffRefreshKey);
-      } catch {
-        // 忽略标记清理失败，不影响小红书处理发布请求。
-      }
-      reviewOpenRequested.value = false;
-      panel.innerHTML = creatorAssistantFrame("正在回盘", `<ol class="publish-review-flow"><li class="is-done"><span class="publish-review-step-dot">✓</span><span>当前方案已导入</span></li><li class="is-done"><span class="publish-review-step-dot">✓</span><span>发布请求已提交</span></li><li class="is-active"><span class="publish-review-step-dot">03</span><span>正在读取作品信息并返回作品复盘</span></li></ol><div class="publish-review-state publish-review-dock-callout">请保持当前页面在前台，助手正在完成作品复盘接力。</div><div class="publish-review-dock-actions"><button class="publish-review-dock-secondary" data-open-saas-review>若未自动返回，手动进入作品复盘</button></div>`);
-      panel.querySelector(".publish-review-close")?.addEventListener("click", closePanel);
-      panel.querySelector("[data-open-saas-review]")?.addEventListener("click", () => openSaasReview(findPublishedWorkUrl() || undefined));
-      waitForPublishedWorkUrl(panel, workUrlBeforePublish);
+      handlePublishSubmitted();
     });
   };
 
   const advanceXhsPublishFlow = () => {
-    if (platform !== "xiaohongshu" || !pendingHandoff || xhsFlowStage === "awaiting-confirmation" || xhsFlowStage === "published") return;
+    if (platform !== "xiaohongshu" || !pendingHandoff || xhsTrustedClickPending || xhsFlowStage === "awaiting-confirmation" || xhsFlowStage === "published") return;
 
     const title = findTitle();
     const body = findBody();
@@ -1052,11 +1107,12 @@
     // 再由下一轮点击页面中央的“上传图片”打开本地文件选择器。
     if (xhsFlowStage === "menu-opened") {
       const directUploadImage = findXhsAction(/^上传图片$/);
-      if (directUploadImage && clickXhsAction(directUploadImage, true)) {
+      if (directUploadImage && clickXhsAction(directUploadImage, true, () => {
         xhsFlowStage = "asset-picker-opened";
         button.textContent = "请选择搭配图片";
         button.setAttribute("aria-label", "请选择搭配图片");
         scheduleXhsAdvance();
+      })) {
         return;
       }
       const uploadTab = findXhsAction(/^上传图文$/);
@@ -1069,11 +1125,13 @@
 
     if (xhsFlowStage === "upload-opened") {
       const uploadImage = findXhsAction(/^上传图片$/);
-      if (uploadImage && clickXhsAction(uploadImage, true)) {
+      if (uploadImage && clickXhsAction(uploadImage, true, () => {
         xhsFlowStage = "asset-picker-opened";
         button.textContent = "请选择搭配图片";
         button.setAttribute("aria-label", "请选择搭配图片");
         scheduleXhsAdvance();
+      })) {
+        return;
       }
     }
   };
@@ -1282,7 +1340,7 @@
       </ol>
       <div class="publish-review-dock-callout">助手只负责打开图片选择窗口和填入文案，不会读取、上传或替你选择本地素材。</div>
       <div class="publish-review-dock-actions"><button class="publish-review-dock-secondary" data-return-app>返回发布应用</button></div>
-      <p class="publish-review-dock-footnote">请关闭当前标签页的 DevTools，并保持小红书在前台；发布前助手会再次请求确认。</p>`), "publish-review-panel-onboarding");
+      <p class="publish-review-dock-footnote">请保持小红书在前台；发布前助手会再次请求确认。只有明确提示调试连接被占用时，才需要关闭 DevTools。</p>`), "publish-review-panel-onboarding");
   };
 
   const showDouyinOnboardingPanel = () => {

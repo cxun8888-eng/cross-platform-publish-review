@@ -9,7 +9,7 @@ PublishLoop 是面向 Chrome / Edge 的中性 Manifest V3 多平台发布与作�
 - [扩展内部技术原理](../docs/technical-deep-dive.md#4-扩展内部设计)
 - [故障排查](../docs/troubleshooting.md)
 
-`storage` 保存应用 Origin、回调路径和短期回流状态；官方域名 host permissions 仅用于内容脚本；可选 `debugger` 仅在用户触发增强点击时申请并立即 detach。扩展不申请 Cookie、任意站点或网络拦截权限。
+`storage` 保存应用 Origin、回调路径和短期回流状态；官方域名 host permissions 仅用于内容脚本。Chrome 不允许将 `debugger` 声明为可选权限，因此 PublishLoop 在安装时声明该权限。`debugger` 本身能力较强；PublishLoop 当前实现只在受支持的官方页面需要增强点击时短暂 attach，并在成功或失败后立即 detach。扩展不申请 Cookie、任意站点或网络拦截权限。
 
 ```bash
 npm install
