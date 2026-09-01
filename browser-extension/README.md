@@ -1,6 +1,6 @@
-# Browser Extension
+# PublishLoop（发布回环）
 
-Chrome / Edge Manifest V3 发布桥接扩展。读取 `publish_review_draft` fragment，在抖音、小红书、微博官方页面显示助手，并在用户确认后辅助唯一、可见、可用的页面动作。
+PublishLoop 是面向 Chrome / Edge 的中性 Manifest V3 多平台发布与作品复盘助手，与任何具体宿主产品品牌解耦。它读取 `publish_review_draft` fragment，在抖音、小红书、微博官方页面显示助手，并在用户确认后辅助唯一、可见、可用的页面动作。
 
 完整说明：
 

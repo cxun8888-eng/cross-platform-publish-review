@@ -739,8 +739,8 @@
     return `
     <header class="publish-review-dock-head">
       <span class="publish-review-brand-mark" aria-hidden="true">✦</span>
-      <div><p class="publish-review-brand-title">发布桥接助手</p><p class="publish-review-brand-subtitle">${platformLabel}官方发布页 · 当前标签协作</p></div>
-      <button class="publish-review-close" type="button" aria-label="收起发布桥接助手">×</button>
+      <div><p class="publish-review-brand-title">PublishLoop</p><p class="publish-review-brand-subtitle">${platformLabel}官方发布页 · 当前标签协作</p></div>
+      <button class="publish-review-close" type="button" aria-label="收起 PublishLoop">×</button>
     </header>
     <div class="publish-review-dock-body">
       <div class="publish-review-route-status"><span>发布应用 → ${platformLabel} → 作品复盘</span><strong>${escapeHtml(status)}</strong></div>
@@ -895,7 +895,7 @@
       y: rect.top + rect.height / 2,
     }).then((response) => {
       if (response?.ok) return;
-      console.warn("[多平台发布复盘] 小红书受信任点击失败", response?.error || "未知错误");
+      console.warn("[PublishLoop] 小红书受信任点击失败", response?.error || "未知错误");
       if (String(xhsFlowStage) === "awaiting-confirmation") {
         showPanel(`<div class="publish-review-head"><span>平台未响应</span><button class="publish-review-close">×</button></div><div class="publish-review-state">浏览器调试点击没有执行成功，请关闭小红书标签页的 DevTools、保持页面在前台，然后直接点击页面底部的“发布”按钮。</div>`);
         return;
@@ -906,7 +906,7 @@
         showPanel(`<div class="publish-review-head"><span>需要重试上传</span><button class="publish-review-close">×</button></div><div class="publish-review-state">受信任点击没有执行成功。请关闭小红书标签页的 DevTools，保持该标签页在前台后，再点击页面上的“上传图片”；选图后插件仍会继续自动填充。</div>`);
       }
     }).catch((error) => {
-      console.warn("[多平台发布复盘] 小红书受信任点击请求失败", error);
+      console.warn("[PublishLoop] 小红书受信任点击请求失败", error);
       if (String(xhsFlowStage) === "awaiting-confirmation") {
         showPanel(`<div class="publish-review-head"><span>平台未响应</span><button class="publish-review-close">×</button></div><div class="publish-review-state">浏览器调试点击没有执行成功，请关闭小红书标签页的 DevTools、保持页面在前台，然后直接点击页面底部的“发布”按钮。</div>`);
         return;
@@ -1128,11 +1128,11 @@
       y: rect.top + rect.height / 2,
     }).then((response) => {
       if (response?.ok) return;
-      console.warn("[多平台发布复盘] 抖音受信任点击失败", response?.error || "未知错误");
+      console.warn("[PublishLoop] 抖音受信任点击失败", response?.error || "未知错误");
       douyinFlowStage = "asset-picker-opened";
       showDouyinOnboardingPanel();
     }).catch((error) => {
-      console.warn("[多平台发布复盘] 抖音受信任点击请求失败", error);
+      console.warn("[PublishLoop] 抖音受信任点击请求失败", error);
       douyinFlowStage = "asset-picker-opened";
     });
     return true;

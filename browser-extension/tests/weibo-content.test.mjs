@@ -62,9 +62,9 @@ test("微博正文选择器覆盖官方分享输入框并排除搜索框", async
 test("微博使用当前标签右侧助手并只承诺返回发布清单", async () => {
   const source = await readFile(resolve(root, "src/content/weibo-content.ts"), "utf8");
   assert.match(source, /weiboAssistantFrame/);
-  assert.match(source, /发布桥接助手/);
+  assert.match(source, /PublishLoop/);
   assert.match(source, /publish-review-panel-dock/);
-  assert.match(source, /收起发布桥接助手/);
+  assert.match(source, /收起 PublishLoop/);
   assert.match(source, /RETURN_TO_SAAS/);
   assert.match(source, /data-publication-complete/);
   assert.match(source, /publicationComplete: returnButton\.hasAttribute/);
