@@ -77,6 +77,8 @@ npm run build
 
 加载的是 `browser-extension/` 根目录，不是 `browser-extension/dist/`，因为 manifest 位于根目录并引用生成的 dist 文件。
 
+加载成功后，扩展卡片应显示“多平台发布与作品复盘助手”。如果仍显示“文数智旅”或“旅策”，说明浏览器加载的是原项目旧目录；请先移除旧扩展，再重新选择本仓库的 `browser-extension/`。
+
 ### 3. 启动 Demo
 
 ```bash

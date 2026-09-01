@@ -145,7 +145,7 @@
       button.style.display = "none";
       return;
     }
-    button.textContent = "展开发布应用助手";
+    button.textContent = "展开多平台发布与作品复盘助手";
     button.disabled = false;
     button.style.display = "block";
   };
@@ -179,8 +179,8 @@
   const weiboAssistantFrame = (status: string, body: string) => `
     <header class="publish-review-dock-head">
       <span class="publish-review-brand-mark" aria-hidden="true">✦</span>
-      <div><p class="publish-review-brand-title">发布桥接助手</p><p class="publish-review-brand-subtitle">微博官方发布页 · 当前标签协作</p></div>
-      <button class="publish-review-close" type="button" aria-label="收起发布桥接助手">×</button>
+      <div><p class="publish-review-brand-title">多平台发布与作品复盘助手</p><p class="publish-review-brand-subtitle">微博官方发布页 · 当前标签协作</p></div>
+      <button class="publish-review-close" type="button" aria-label="收起多平台发布与作品复盘助手">×</button>
     </header>
     <div class="publish-review-dock-body">
       <div class="publish-review-route-status"><span>发布应用 → 微博 → 发布清单</span><strong>${escapeHtml(status)}</strong></div>
