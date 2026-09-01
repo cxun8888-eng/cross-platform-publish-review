@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+coverage/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.pem
+*.key
+*.p12
+*.pfx
+.DS_Store

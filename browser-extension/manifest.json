@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Publish Review Bridge",
+  "description": "在抖音、小红书和微博官方页面辅助导入草稿，并把发布回执带回宿主应用。",
+  "version": "0.1.0",
+  "minimum_chrome_version": "102",
+  "permissions": ["storage"],
+  "optional_permissions": ["debugger"],
+  "host_permissions": [
+    "https://creator.douyin.com/*",
+    "https://creator.xiaohongshu.com/*",
+    "https://weibo.com/*",
+    "https://www.weibo.com/*"
+  ],
+  "background": {
+    "service_worker": "dist/background/service-worker.js"
+  },
+  "action": {
+    "default_title": "导入发布草稿",
+    "default_popup": "dist/popup/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://creator.douyin.com/*",
+        "https://creator.xiaohongshu.com/*"
+      ],
+      "js": ["dist/content/creator-content.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://weibo.com/*",
+        "https://www.weibo.com/*"
+      ],
+      "js": ["dist/content/weibo-content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "dist/popup/popup.html"
+}

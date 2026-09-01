@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Publish / Review 技术演示</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="返回顶部"><span>PR</span> Publish / Review</a>
+      <p>非 iframe · 浏览器辅助发布 · 服务端作品复盘</p>
+      <a class="source" href="https://github.com/cxun8888-eng/cross-platform-publish-review" rel="noreferrer">REFERENCE KIT ↗</a>
+    </header>
+    <main id="top">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">CROSS-PLATFORM HANDOFF</p>
+          <h1>把发布留在官方页面，<br /><em>把结果带回你的产品。</em></h1>
+          <p class="lede">这不是平台页面的仿制品，也不使用 iframe。宿主应用用 fragment 交接公开文案，扩展在用户确认后辅助操作，再把最小化回执送回复盘模块。</p>
+        </div>
+        <aside class="boundary">
+          <strong>安全边界</strong>
+          <ul><li>不读取 Cookie、密码或本地文件</li><li>不绕过验证码与平台风控</li><li>RedFox Key 仅存在于 Worker 环境</li></ul>
+        </aside>
+      </section>
+
+      <nav class="handoff-rail" aria-label="发布链路">
+        <div class="active"><b>01</b><span>Draft</span><small>宿主应用</small></div>
+        <i aria-hidden="true"></i>
+        <div><b>02</b><span>Bridge</span><small>浏览器扩展</small></div>
+        <i aria-hidden="true"></i>
+        <div><b>03</b><span>Official</span><small>平台发布页</small></div>
+        <i aria-hidden="true"></i>
+        <div><b>04</b><span>Review</span><small>回执与快照</small></div>
+      </nav>
+
+      <section class="workspace">
+        <article class="panel draft-panel">
+          <header><div><p class="panel-index">01 / 草稿交接</p><h2>准备一份可公开文案</h2></div><span class="pill">fragment only</span></header>
+          <label>标题<input id="title" maxlength="200" value="城市漫游：把周末交给一条老街" /></label>
+          <label>正文<textarea id="content" maxlength="10000">从清晨的街角早餐，到黄昏时分的旧城散步，这是一条不赶时间的城市路线。请在官方发布页确认素材、账号和平台设置。</textarea></label>
+          <label>标签<input id="tags" value="城市旅行, 周末路线, 慢生活" /></label>
+          <div class="platforms" aria-label="选择发布平台">
+            <button data-platform="douyin"><span>抖音</span><small>图文辅助发布</small></button>
+            <button data-platform="xiaohongshu"><span>小红书</span><small>图文辅助发布</small></button>
+            <button data-platform="weibo"><span>微博</span><small>返回触发回执</small></button>
+          </div>
+          <p class="hint">需要先以“加载已解压扩展”的方式安装 <code>browser-extension/dist</code>。</p>
+        </article>
+
+        <article class="panel review-panel">
+          <header><div><p class="panel-index">02 / 手动复盘</p><h2>用作品链接创建快照</h2></div><span class="pill green">server only</span></header>
+          <p class="copy">抖音、小红书作品链接只用于提取作品 ID；后端不会请求用户输入的 URL。默认 Mock 模式即可跑通完整链路。</p>
+          <label>平台<select id="review-platform"><option value="douyin">抖音</option><option value="xiaohongshu">小红书</option></select></label>
+          <label>作品链接或 ID<input id="work-value" placeholder="粘贴官方作品链接" /></label>
+          <label>API 地址<input id="api-base" value="http://localhost:8000" /></label>
+          <button id="lookup" class="primary">创建复盘任务 <span>→</span></button>
+          <div id="review-result" class="result" aria-live="polite"><span class="pulse"></span><p><strong>等待输入</strong><br />结果会在这里显示，不会暴露 Provider Key。</p></div>
+        </article>
+      </section>
+
+      <section id="receipt" class="receipt" hidden>
+        <p class="panel-index">PUBLICATION RECEIPT</p>
+        <h2>已从官方页面返回</h2>
+        <pre id="receipt-json"></pre>
+      </section>
+    </main>
+    <footer>Unofficial reference implementation · 平台名称仅用于描述兼容性</footer>
+    <script src="app.js"></script>
+  </body>
+</html>
