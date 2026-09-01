@@ -5,7 +5,8 @@
   "workspaces": ["packages/protocol", "browser-extension"],
   "scripts": {
     "build": "npm run build --workspace @publish-review/protocol && npm run build --workspace @publish-review/browser-extension",
-    "test": "npm run test --workspace @publish-review/protocol && npm run test --workspace @publish-review/browser-extension"
+    "test": "npm run test --workspace @publish-review/protocol && npm run test --workspace @publish-review/browser-extension",
+    "docs:check": "node scripts/check-doc-links.mjs"
   },
   "engines": { "node": ">=20" }
 }
